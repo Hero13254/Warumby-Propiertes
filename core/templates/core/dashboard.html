@@ -1,0 +1,34 @@
+{% extends 'core/base.html' %}
+{% block header %}Painel{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Visão geral</h1><p>Resumo atual da administração e do portal dos moradores.</p></div></div>
+<div class="cards">
+  <div class="card stat"><span>Prédios</span><strong>{{ predios }}</strong></div>
+  <div class="card stat"><span>Apartamentos</span><strong>{{ apartamentos }}</strong></div>
+  <div class="card stat"><span>Ocupados</span><strong>{{ ocupados }}</strong></div>
+  <a class="card stat actionable-stat" href="{% url 'usuarios_acessos' %}"><span>Acessos pendentes</span><strong>{{ acessos_pendentes }}</strong></a>
+  <a class="card stat actionable-stat" href="{% url 'comprovantes_admin' %}"><span>Comprovantes pendentes</span><strong>{{ comprovantes_pendentes }}</strong></a>
+  <a class="card stat actionable-stat" href="{% url 'manutencoes_admin' %}"><span>Manutenções abertas</span><strong>{{ manutencoes_abertas }}</strong></a>
+  <div class="card stat"><span>Recebido no mês</span><strong>R$ {{ recebido|floatformat:2 }}</strong></div>
+  <div class="card stat"><span>A receber no mês</span><strong>R$ {{ a_receber|floatformat:2 }}</strong></div>
+  <div class="card stat"><span>Contas cadastradas</span><strong>{{ contas }}</strong></div>
+</div>
+<div class="card">
+  <div class="section-title"><div><h2>Mensalidades de {{ competencia_painel|date:'m/Y' }}</h2><p class="muted">Verde = quitado, laranja = parcial, vermelho = em atraso.</p></div><span class="badge danger">{{ total_pendencias }} pendências</span></div>
+  <div class="table-wrap"><table><thead><tr><th>Morador</th><th>Unidade</th><th>Vencimento</th><th>Progresso</th><th>Saldo</th><th>Status</th></tr></thead><tbody>
+  {% for item in situacoes_mensalidades %}
+    <tr>
+      <td>{{ item.ocupacao.morador.nome_completo }}</td>
+      <td>{{ item.ocupacao.apartamento }}</td>
+      <td>{{ item.vencimento|date:'d/m/Y' }}</td>
+      <td class="progress-cell">
+        <div class="payment-progress-text">R$ {{ item.pago|floatformat:2 }} / R$ {{ item.devido|floatformat:2 }}{% if item.credito %} <small>· crédito R$ {{ item.credito|floatformat:2 }}</small>{% endif %}</div>
+        <div class="payment-progress"><span class="bar-{{ item.status|lower }}" style="width:{{ item.percentual }}%"></span></div>
+      </td>
+      <td>R$ {{ item.saldo|floatformat:2 }}</td>
+      <td><span class="badge status-{{ item.status|lower }}">{{ item.status }}</span></td>
+    </tr>
+  {% empty %}<tr><td colspan="6" class="empty">Nenhuma ocupação aplicável a esta competência.</td></tr>{% endfor %}
+  </tbody></table></div>
+</div>
+{% endblock %}
