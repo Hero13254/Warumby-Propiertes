@@ -1,0 +1,138 @@
+{% load static %}
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101a28">
+  <title>{% block title %}Warumby Properties{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="{% static 'core/favicon.svg' %}?v=0.3.4.3">
+  <link rel="shortcut icon" href="{% static 'core/favicon.svg' %}?v=0.3.4.3">
+  <script>
+    (function () {
+      const saved = localStorage.getItem('gestao-imoveis-theme');
+      const preferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      document.documentElement.dataset.theme = saved || preferred;
+    })();
+  </script>
+  <link rel="stylesheet" href="{% static 'core/app.css' %}?v=0.3.4.3">
+</head>
+<body>
+<div class="app-shell">
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="fecharMenu()"></div>
+  <aside class="sidebar" id="sidebar" aria-label="Navegação principal">
+    <div class="sidebar-head">
+      <a class="brand" href="{% if perfil_usuario.eh_gestor %}{% url 'dashboard' %}{% elif perfil_usuario.status == 'ATIVO' and perfil_usuario.papel == 'MORADOR' %}{% url 'portal_morador' %}{% else %}{% url 'estado_acesso' %}{% endif %}" title="Warumby Properties">
+        <span class="brand-mark" aria-hidden="true">WP</span>
+        <span class="brand-copy"><strong>Warumby Properties</strong><small>Gestão de Imóveis</small></span>
+      </a>
+      <button class="sidebar-collapse" id="sidebar-collapse" type="button" onclick="alternarSidebarDesktop()" aria-label="Recolher menu" title="Recolher menu">
+        <span id="sidebar-collapse-icon">‹</span>
+      </button>
+    </div>
+
+    <nav id="sidebar-nav">
+      {% if perfil_usuario.eh_gestor %}
+        <a href="{% url 'dashboard' %}" title="Painel"><span class="nav-icon">⌂</span><span class="nav-text">Painel</span></a>
+        <div class="nav-label">Imóveis</div>
+        <a href="{% url 'predios' %}" title="Prédios"><span class="nav-icon">🏢</span><span class="nav-text">Prédios</span></a>
+        <a href="{% url 'apartamentos' %}" title="Apartamentos"><span class="nav-icon">🚪</span><span class="nav-text">Apartamentos</span></a>
+        <a href="{% url 'moradores' %}" title="Moradores cadastrados"><span class="nav-icon">👥</span><span class="nav-text">Moradores cadastrados</span></a>
+        <div class="nav-label">Financeiro</div>
+        <a href="{% url 'pagamentos' %}" title="Pagamentos"><span class="nav-icon">💰</span><span class="nav-text">Pagamentos</span></a>
+        <a href="{% url 'comprovantes_admin' %}" title="Comprovantes"><span class="nav-icon">📎</span><span class="nav-text">Comprovantes</span></a>
+        <a href="{% url 'contas' %}" title="Contas dos imóveis"><span class="nav-icon">⚡</span><span class="nav-text">Contas dos imóveis</span></a>
+        {% if perfil_usuario.papel == 'PROPRIETARIO' %}<a href="{% url 'relatorios_financeiros' %}" title="Relatórios financeiros"><span class="nav-icon">📊</span><span class="nav-text">Relatórios financeiros</span></a>{% endif %}
+        <div class="nav-label">Portal</div>
+        <a href="{% url 'usuarios_acessos' %}" title="Usuários e acessos"><span class="nav-icon">🔐</span><span class="nav-text">Usuários e acessos</span></a>
+        <a href="{% url 'comunicados_admin' %}" title="Comunicados"><span class="nav-icon">📢</span><span class="nav-text">Comunicados</span></a>
+        <a href="{% url 'manutencoes_admin' %}" title="Manutenções"><span class="nav-icon">🔧</span><span class="nav-text">Manutenções</span></a>
+        {% if request.user.is_superuser %}<a href="/admin/" title="Administração técnica"><span class="nav-icon">⚙</span><span class="nav-text">Administração técnica</span></a>{% endif %}
+      {% elif perfil_usuario.status == 'ATIVO' and perfil_usuario.papel == 'MORADOR' %}
+        <a href="{% url 'portal_morador' %}" title="Minha residência"><span class="nav-icon">⌂</span><span class="nav-text">Minha residência</span></a>
+        <a href="{% url 'meus_pagamentos' %}" title="Pagamentos e recibos"><span class="nav-icon">💰</span><span class="nav-text">Pagamentos e recibos</span></a>
+        <a href="{% url 'meus_comunicados' %}" title="Comunicados"><span class="nav-icon">📢</span><span class="nav-text">Comunicados</span>{% if notificacoes_nao_lidas %}<span class="nav-count">{{ notificacoes_nao_lidas }}</span>{% endif %}</a>
+        <a href="{% url 'minhas_manutencoes' %}" title="Manutenção"><span class="nav-icon">🔧</span><span class="nav-text">Manutenção</span></a>
+      {% else %}
+        <a href="{% url 'estado_acesso' %}" title="Situação do acesso"><span class="nav-icon">⌛</span><span class="nav-text">Situação do acesso</span></a>
+      {% endif %}
+      <div class="nav-label">Conta</div>
+      {% if perfil_usuario.tem_residencia and perfil_usuario.eh_gestor %}<a href="{% url 'portal_morador' %}" title="Minha residência"><span class="nav-icon">🏠</span><span class="nav-text">Minha residência</span>{% if notificacoes_nao_lidas %}<span class="nav-count">{{ notificacoes_nao_lidas }}</span>{% endif %}</a>{% endif %}
+      <a href="{% url 'minha_conta' %}" title="Minha conta"><span class="nav-icon">👤</span><span class="nav-text">Minha conta</span></a>
+      <a href="{% url 'alterar_senha' %}" title="Alterar senha"><span class="nav-icon">🔐</span><span class="nav-text">Alterar senha</span></a>
+    </nav>
+
+    <form action="{% url 'logout' %}" method="post" class="logout-form">{% csrf_token %}
+      <button title="Sair"><span class="nav-icon">↪</span><span class="logout-label">Sair</span></button>
+    </form>
+  </aside>
+
+  <main class="content">
+    <header class="topbar">
+      <button class="menu-button" type="button" onclick="alternarMenu()" aria-label="Abrir menu" title="Abrir menu">☰</button>
+      <span>{% block header %}Warumby Properties{% endblock %}</span>
+      <div class="topbar-actions">
+        {% if notificacoes_nao_lidas and perfil_usuario.morador_id %}<a class="notification-pill" href="{% url 'meus_comunicados' %}" title="Comunicados não lidos">🔔 {{ notificacoes_nao_lidas }}</a>{% endif %}
+        <button class="theme-toggle" id="theme-toggle" type="button" onclick="alternarTema()" aria-label="Alternar modo escuro" title="Alternar modo escuro">
+          <span id="theme-icon" aria-hidden="true">🌙</span><span class="theme-label" id="theme-label">Modo escuro</span>
+        </button>
+        <small>{{ request.user.username }}{% if perfil_usuario %} · {{ perfil_usuario.get_papel_display }}{% endif %}</small>
+      </div>
+    </header>
+    {% if messages %}<div class="messages">{% for message in messages %}<div class="message {% if message.tags == 'error' %}error{% endif %}">{{ message }}</div>{% endfor %}</div>{% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+<script>
+const sidebar = document.getElementById('sidebar');
+const sidebarOverlay = document.getElementById('sidebar-overlay');
+const sidebarCollapseIcon = document.getElementById('sidebar-collapse-icon');
+const sidebarCollapseButton = document.getElementById('sidebar-collapse');
+const SIDEBAR_KEY = 'warumby-sidebar-collapsed';
+
+function alternarMenu(){
+  sidebar.classList.toggle('open');
+  sidebarOverlay.classList.toggle('open');
+  document.body.classList.toggle('menu-open', sidebar.classList.contains('open'));
+}
+function fecharMenu(){
+  sidebar.classList.remove('open');
+  sidebarOverlay.classList.remove('open');
+  document.body.classList.remove('menu-open');
+}
+function atualizarSidebarDesktop(){
+  if(window.innerWidth <= 900){
+    sidebar.classList.remove('collapsed');
+    if(sidebarCollapseIcon) sidebarCollapseIcon.textContent = '‹';
+    return;
+  }
+  fecharMenu();
+  const collapsed = localStorage.getItem(SIDEBAR_KEY) === '1';
+  sidebar.classList.toggle('collapsed', collapsed);
+  if(sidebarCollapseIcon) sidebarCollapseIcon.textContent = collapsed ? '›' : '‹';
+  if(sidebarCollapseButton){
+    const label = collapsed ? 'Expandir menu' : 'Recolher menu';
+    sidebarCollapseButton.setAttribute('aria-label', label);
+    sidebarCollapseButton.setAttribute('title', label);
+  }
+}
+function alternarSidebarDesktop(){
+  if(window.innerWidth <= 900) return alternarMenu();
+  const collapsed = !sidebar.classList.contains('collapsed');
+  localStorage.setItem(SIDEBAR_KEY, collapsed ? '1' : '0');
+  atualizarSidebarDesktop();
+}
+
+document.querySelectorAll('#sidebar a').forEach(a=>a.addEventListener('click',()=>{if(window.innerWidth<=900)fecharMenu()}));
+window.addEventListener('resize', atualizarSidebarDesktop);
+window.addEventListener('keydown', (event)=>{if(event.key==='Escape')fecharMenu()});
+atualizarSidebarDesktop();
+
+function copiarCodigo(btn, codigo) {navigator.clipboard.writeText(codigo).then(() => {const old=btn.textContent;btn.textContent='Copiado ✓';setTimeout(()=>btn.textContent=old,1400);});}
+function atualizarBotaoTema(){const dark=document.documentElement.dataset.theme==='dark';const icon=document.getElementById('theme-icon');const label=document.getElementById('theme-label');const button=document.getElementById('theme-toggle');if(icon)icon.textContent=dark?'☀️':'🌙';if(label)label.textContent=dark?'Modo claro':'Modo escuro';if(button){button.setAttribute('aria-label',dark?'Ativar modo claro':'Ativar modo escuro');button.setAttribute('title',dark?'Ativar modo claro':'Ativar modo escuro')}}
+function alternarTema(){const novo=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=novo;localStorage.setItem('gestao-imoveis-theme',novo);atualizarBotaoTema()}
+atualizarBotaoTema();
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
